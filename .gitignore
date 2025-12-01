@@ -80,3 +80,14 @@ __recovery/
 
 # Boss dependency manager vendor folder https://github.com/HashLoad/boss
 modules/
+Android64
+iOSDevice64
+LaunchScreen.TemplateiOS
+OSXARM64
+Entitlement.TemplateiOS.xml
+Entitlement.TemplateOSX.xml
+info.plist.TemplateiOS.xml
+info.plist.TemplateOSX.xml
+ColorSelector.deployproj
+AndroidManifest.template.xml
+APIKey.inc

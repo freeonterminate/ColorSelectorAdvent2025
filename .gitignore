@@ -91,3 +91,6 @@ info.plist.TemplateOSX.xml
 ColorSelector.deployproj
 AndroidManifest.template.xml
 APIKey.inc
+Win64
+Images/Icon256.png
+Images/IconOriginal.psd

@@ -80,7 +80,6 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure AfterConstruction; override;
 
     procedure SetColorWithoutEvent(const AColor: TAlphaColor);
 
@@ -115,12 +114,6 @@ uses
 
 { TCustomSelector }
 
-procedure TCustomSelector.AfterConstruction;
-begin
-  inherited;
-  SetSize(320, 320);
-end;
-
 constructor TCustomSelector.Create(AOwner: TComponent);
 begin
   inherited;
@@ -128,6 +121,7 @@ begin
   FBaseColor := TAlphaColors.White;
 
   FBase := TBitmap.Create;
+  FBase.SetSize(320, 320);
 end;
 
 destructor TCustomSelector.Destroy;
@@ -197,8 +191,6 @@ begin
   var W := Trunc(Width);
   var H := Trunc(Height);
   FBase.SetSize(W, H);
-
-  StartDraw;
 end;
 
 procedure TCustomSelector.SetBaseColor(const AColor: TAlphaColor);
@@ -226,16 +218,10 @@ end;
 
 procedure TCustomSelector.StartDraw;
 begin
-  if(FBase.Canvas = nil) then
+  if (FBase = nil) or (FBase.Canvas = nil) or (Scene = nil) then
     Exit;
 
-  FBase.Canvas.BeginScene;
-  try
-    FBase.Clear(FBaseColor);
-    Draw(FBase.Canvas);
-  finally
-    FBase.Canvas.EndScene;
-  end;
+  Draw(FBase.Canvas);
 end;
 
 { TSelectorCursor }

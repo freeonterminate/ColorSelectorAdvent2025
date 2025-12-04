@@ -234,7 +234,7 @@ begin
   FAIChatReq.Connection := FAIConnection;
 
   FAIDriver.Params.Add('Model=gpt-4.1');
-  // APIkey.inc 内に OpenAI の’ API キーをシングルクオートをつけて
+  // APIkey.inc 内に OpenAI の API キーをシングルクオートをつけて
   // 文字列として記載してください
   // 例: 'skhonyarara-nyararara'
   FAIDriver.Params.Add('APIKey=' + {$I APIkey.inc} );

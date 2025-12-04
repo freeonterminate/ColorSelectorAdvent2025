@@ -198,6 +198,7 @@ begin
   FHue := 0;
   FSaturation := 1;
   FValue := 1;
+
   CalcColor;
 end;
 
@@ -205,8 +206,7 @@ procedure THSVSelector.Draw(const ACanvas: TCanvas);
 begin
   inherited;
 
-  var Data :=
-    TBitmapData.Create(Base.Width, Base.Height, TPixelFormat.RGBA);
+  var Data: TBitmapData;
 
   Base.Map(TMapAccess.ReadWrite, Data);
   try
@@ -583,19 +583,12 @@ end;
 procedure TCircleSelector.RedrawTriangle;
 begin
   // Triangle のみを再描画
-  Base.Canvas.BeginScene;
+  var Data: TBitmapData;
+  Base.Map(TMapAccess.ReadWrite, Data);
   try
-    var Data :=
-      TBitmapData.Create(Base.Width, Base.Height, TPixelFormat.RGBA);
-
-    Base.Map(TMapAccess.ReadWrite, Data);
-    try
-      DrawTriangle(Base.Canvas, Data);
-    finally
-      Base.Unmap(Data);
-    end;
+    DrawTriangle(Base.Canvas, Data);
   finally
-    Base.Canvas.EndScene;
+    Base.Unmap(Data);
   end;
 end;
 
@@ -612,6 +605,8 @@ procedure TCircleSelector.ResizeImpl;
 
 begin
   inherited;
+
+  Base.Clear(BaseColor);
 
   var W := Base.Width;
   var H := Base.Height;

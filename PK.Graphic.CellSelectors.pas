@@ -176,31 +176,36 @@ procedure TCustomCellSelector.Draw(const ACanvas: TCanvas);
 begin
   inherited;
 
-  ACanvas.Fill.Kind := TBrushKind.Solid;
-  ACanvas.Stroke.Kind := TBrushKind.Solid;
-  ACanvas.Stroke.Thickness := 1;
-  ACanvas.Stroke.Color := (BaseColor xor $00_ff_ff_ff) or $ff_00_00_00;
+  ACanvas.BeginScene;
+  try
+    ACanvas.Fill.Kind := TBrushKind.Solid;
+    ACanvas.Stroke.Kind := TBrushKind.Solid;
+    ACanvas.Stroke.Thickness := 1;
+    ACanvas.Stroke.Color := (BaseColor xor $00_ff_ff_ff) or $ff_00_00_00;
 
-  for var Row := 0 to FRows - 1 do
-  begin
-    for var Col := 0 to FCols - 1 do
+    for var Row := 0 to FRows - 1 do
     begin
-      var CellR :=
-        RectF(
-          FCellRect.Left + Col * FCellWidth,
-          FCellRect.Top + Row * FCellHeight,
-          FCellRect.Left + (Col + 1) * FCellWidth,
-          FCellRect.Top + (Row + 1) * FCellHeight
-        );
+      for var Col := 0 to FCols - 1 do
+      begin
+        var CellR :=
+          RectF(
+            FCellRect.Left + Col * FCellWidth,
+            FCellRect.Top + Row * FCellHeight,
+            FCellRect.Left + (Col + 1) * FCellWidth,
+            FCellRect.Top + (Row + 1) * FCellHeight
+          );
 
-      ACanvas.Fill.Color := GetCellColor(Col, Row);
-      ACanvas.FillRect(CellR, 0, 0, [], 1);
-      ACanvas.DrawRect(CellR, 0, 0, [], 1);
+        ACanvas.Fill.Color := GetCellColor(Col, Row);
+        ACanvas.FillRect(CellR, 0, 0, [], 1);
+        ACanvas.DrawRect(CellR, 0, 0, [], 1);
+      end;
     end;
-  end;
 
-  ACanvas.Stroke.Thickness := 2.5;
-  ACanvas.DrawRect(FCellRect, 0, 0, [], 1);
+    ACanvas.Stroke.Thickness := 2.5;
+    ACanvas.DrawRect(FCellRect, 0, 0, [], 1);
+  finally
+    ACanvas.EndScene;
+  end;
 end;
 
 function TCustomCellSelector.CellByPos(const AX, AY: Single): TPoint;

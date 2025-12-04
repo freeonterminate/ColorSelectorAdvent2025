@@ -315,23 +315,20 @@ begin
   var W := AData.Width;
   var H := AData.Height;
 
-  // 走査範囲を円環の外接四角形に限定
-  var X1 := Max(0, FCX - FRadius - AA_WIDTH);
-  var X2 := Min(W - 1, FCX + FRadius + AA_WIDTH);
-  var Y1 := Max(0, FCY - FRadius - AA_WIDTH);
-  var Y2 := Min(H - 1, FCY + FRadius + AA_WIDTH);
-
-  for var Y := Y1 to Y2 do
+  for var Y := 0 to H - 1 do
   begin
-    for var X := X1 to X2 do
+    for var X := 0 to W - 1 do
     begin
       var DX := X - FCX;
       var DY := Y - FCY;
       var D := Sqrt(DX * DX + DY * DY); // 中心からの距離
 
-      // 1. 色相環の本体領域外のピクセルはスキップ
-      if (D > FRadius + AA_WIDTH) or (D < FInnerRadius - AA_WIDTH) then
+      // 1. 色相環の本体領域外のピクセルは背景色を塗る
+      if (D >= FRadius + AA_WIDTH) or (D <= FInnerRadius - AA_WIDTH) then
+      begin
+        AData.SetPixel(X, Y, BaseColor);
         Continue;
+      end;
 
       // 2. 色相環の色と背景色を取得
       var FRC := TAlphaColorRec(GetColorByPos(DX, DY));
@@ -605,8 +602,6 @@ procedure TCircleSelector.ResizeImpl;
 
 begin
   inherited;
-
-  Base.Clear(BaseColor);
 
   var W := Base.Width;
   var H := Base.Height;

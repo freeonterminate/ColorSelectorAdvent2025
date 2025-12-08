@@ -23,6 +23,7 @@
  *
  * HISTROY
  *   2025/12/01 Version 1.0.0  First Release
+ *   2025/12/08 Version 1.1.0  FMX ColorPanel Support
  *
  * Programmed by HOSOKAWA Jun (twitter: @pik)
  *)
@@ -46,7 +47,7 @@ type
   TCustomCellSelector = class(TCustomSelector)
   private const
     CURSOR_RATIO = 0.65; // カーソルサイズ比（セル短辺に対する）
-    CURSOR_MINIMUM_SIZE = 8;
+    CURSOR_MINIMUM_SIZE = 5;
   private
     FCols: Integer;
     FRows: Integer;

@@ -23,6 +23,7 @@
  *
  * HISTROY
  *   2025/12/01 Version 1.0.0  First Release
+ *   2025/12/08 Version 1.1.0  FMX ColorPanel Support
  *
  * Programmed by HOSOKAWA Jun (twitter: @pik)
  *)
@@ -95,15 +96,19 @@ type
   // カーソル
   TSelectorCursor = class(TCircle)
   private const
-    CUSOR_THICKNESS_SIZE = 3;
+    DEFAULT_THICKNESS = 2;
   private var
     FSelector: TCustomSelector;
+  private
+    procedure SetThickness(const AValue: Single);
+    function GetThickness: Single;
   protected
     procedure MoveTo(const AX, AY: Single); virtual;
     procedure Update(const ASize: Single); virtual;
     property Selector: TCustomSelector read FSelector;
   public
     constructor Create(AOwner: TComponent); override;
+    property Thickness: Single read GetThickness write SetThickness;
   end;
 
 implementation
@@ -236,12 +241,18 @@ begin
   FSelector := AOwner as TCustomSelector;
 
   Fill.Color := $00_ff_ff_ff;
-  Stroke.Color := TAlphaColors.Black;
+  Stroke.Color := TAlphaColors.White;
+  Stroke.Thickness := DEFAULT_THICKNESS;
 
   var F := TGlowEffect.Create(Self);
-  F.GlowColor := TAlphaColors.White;
+  F.GlowColor := TAlphaColors.Black;
   F.Softness := 0.2;
   F.Parent := Self;
+end;
+
+function TSelectorCursor.GetThickness: Single;
+begin
+  Result := Stroke.Thickness;
 end;
 
 procedure TSelectorCursor.MoveTo(const AX, AY: Single);
@@ -249,10 +260,14 @@ begin
   // 継承先で上書き
 end;
 
+procedure TSelectorCursor.SetThickness(const AValue: Single);
+begin
+  Stroke.Thickness := AValue;
+  Update(Width);
+end;
+
 procedure TSelectorCursor.Update(const ASize: Single);
 begin
-  Stroke.Thickness := CUSOR_THICKNESS_SIZE;
-
   Width := ASize;
   Height := ASize;
 

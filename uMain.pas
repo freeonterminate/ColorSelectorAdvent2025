@@ -29,6 +29,7 @@ uses
   , PK.Graphic.CellSelectors
   , PK.Graphic.ColorSelectors
   , PK.Graphic.ColorBar
+  , PK.Graphic.FMXColorPanelWrapper
   ;
 
 type
@@ -42,7 +43,6 @@ type
     tab128: TTabItem;
     layColors: TLayout;
     layColor: TLayout;
-    imgColor: TImage;
     layBarBase: TLayout;
     lblColor: TLabel;
     timerCopy: TTimer;
@@ -56,6 +56,8 @@ type
     btnChat: TButton;
     chbxAlpha: TCheckBox;
     layAIMemoScroller: TLayout;
+    colorBox: TColorBox;
+    tabFMX: TTabItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure layColorClick(Sender: TObject);
@@ -79,6 +81,7 @@ type
     FRectSelector: TRectSelector;
     F16Selector: T16CellSelector;
     F128Selector: T128CellSelector;
+    FColorPanelWrapper: TFMXColorPanelWrapper;
     FRGBBars: TRGBBars;
     FColor: TAlphaColor;
     FPrevColor: TAlphaColor;
@@ -188,40 +191,14 @@ begin
   if not FRGBBars.AlphaEnabled then
     FRGBBars.SetColorWithoutEvent(FRGBBars.Color or $ff_00_00_00);
 
+  FColorPanelWrapper.AlphaEnabled := FRGBBars.AlphaEnabled;
+
   SelectorChangeHandler(Self, FRGBBars.Color);
 end;
 
 procedure TfrmSelector.FormCreate(Sender: TObject);
 begin
-  FCircleSelector := CreateSelector<TCircleSelector>(tabCircle);
-  FRectSelector := CreateSelector<TRectSelector>(tabRect);
-
-  F16Selector := CreateSelector<T16CellSelector>(tab16);
-  F16Selector.BaseColor := $00_ff_ff_ff;
-  F128Selector := CreateSelector<T128CellSelector>(tab128);
-  F128Selector.BaseColor := $00_ff_ff_ff;
-
-  FRGBBars := TRGBBars.Create(Self);
-  FRGBBars.Align := TAlignLayout.Client;
-  FRGBBars.OnChange := RGBBarChangeHandler;
-  FRGBBars.Parent := layBarBase;
-
-  imgColor.Bitmap.SetSize(Trunc(imgColor.Width), Trunc(imgColor.Height));
-  lblColor.Font.Family := TFontUtils.GetMonospaceFont;
-
-  SelectorChangeHandler(Self, TAlphaColors.Black);
-  tabSelectorsChange(Self);
-
-  {$IFDEF IOS}
-  tabCircle.Font.Size := 16;
-  tabCircle.StyledSettings := tabCircle.StyledSettings - [TStyledSetting.Size];
-  tabRect.Font.Size := 16;
-  tabRect.StyledSettings := tabCircle.StyledSettings - [TStyledSetting.Size];
-  tab16.Font.Size := 16;
-  tab16.StyledSettings := tabCircle.StyledSettings - [TStyledSetting.Size];
-  tab128.Font.Size := 16;
-  tab128.StyledSettings := tabCircle.StyledSettings - [TStyledSetting.Size];
-  {$ENDIF}
+  HideWaiter;
 
   chbxAIEnabledChange(Self);
   layAIMemoScroller.AutoCapture := True;
@@ -242,7 +219,24 @@ begin
   FAIChatReq.OnError := AIChatReqErrorHandler;
   FAIChatReq.OnResponse := AIChatReqResponseHandler;
 
-  HideWaiter;
+  FRGBBars := TRGBBars.Create(Self);
+  FRGBBars.Align := TAlignLayout.Client;
+  FRGBBars.OnChange := RGBBarChangeHandler;
+  FRGBBars.Parent := layBarBase;
+
+  lblColor.Font.Family := TFontUtils.GetMonospaceFont;
+
+  FCircleSelector := CreateSelector<TCircleSelector>(tabCircle);
+  FRectSelector := CreateSelector<TRectSelector>(tabRect);
+
+  F16Selector := CreateSelector<T16CellSelector>(tab16);
+  F128Selector := CreateSelector<T128CellSelector>(tab128);
+  F16Selector.BaseColor := $00_ff_ff_ff;
+  F128Selector.BaseColor := $00_ff_ff_ff;
+
+  FColorPanelWrapper := CreateSelector<TFMXColorPanelWrapper>(tabFMX);
+
+  RGBBarChangeHandler(FRGBBars, TAlphaColors.Black);
 end;
 
 procedure TfrmSelector.FormDestroy(Sender: TObject);
@@ -332,7 +326,7 @@ var
 begin
   FColor := AColor;
 
-  imgColor.Bitmap.Clear(FColor);
+  colorBox.Color := FColor;
 
   var Text := Format('%.2x%.2x%.2x%.2x', [Rec.A, Rec.R, Rec.G, Rec.B]);
 
@@ -374,7 +368,10 @@ end;
 
 procedure TfrmSelector.tabSelectorsChange(Sender: TObject);
 begin
-  var S: TCustomSelector := FCircleSelector;
+  var S: TCustomSelector := nil;
+
+  if tabSelectors.ActiveTab = tabCircle then
+    S := FCircleSelector;
 
   if tabSelectors.ActiveTab = tabRect then
     S := FRectSelector;
@@ -385,7 +382,11 @@ begin
   if tabSelectors.ActiveTab = tab128 then
     S := F128Selector;
 
-  S.SetColorWithoutEvent(FColor);
+  if tabSelectors.ActiveTab = tabFMX then
+    S := FColorPanelWrapper;
+
+  if S <> nil then
+    S.SetColorWithoutEvent(FColor);
 end;
 
 procedure TfrmSelector.timerCopyTimer(Sender: TObject);

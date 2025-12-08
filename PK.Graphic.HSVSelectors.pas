@@ -11,6 +11,7 @@
  *
  * HISTROY
  *   2025/12/01 Version 1.0.0  First Release
+ *   2025/12/08 Version 1.1.0  FMX ColorPanel Support
  *
  * USAGE
  *   // Create Selector
@@ -101,7 +102,6 @@ type
     FTriDenom: Integer;
     FHueCursor: THueCursor;
     FSVCursor: TSVCursor;
-    FCursorMargin: Single;
     FInHueCircle: Boolean;
     FInSVTriangle: Boolean;
   private
@@ -295,6 +295,8 @@ begin
 
   FHueCursor := THueCursor.Create(Self);
   FSVCursor := TSVCursor.Create(Self);
+
+  FSVCursor.Thickness := 1.5;
 
   FHueCursor.Parent := Self;
   FSVCursor.Parent := Self;
@@ -639,11 +641,8 @@ begin
   // カーソル
   FHueRadius := FInnerRadius + FInnerDelta div 2;
 
-  var Size := FInnerDelta / 2;
-  FCursorMargin := Size / 2;
-
-  FHueCursor.Update(Size);
-  FSVCursor.Update(Size);
+  FHueCursor.Update(FInnerDelta / 2);
+  FSVCursor.Update(FInnerDelta / 3);
 end;
 
 procedure TCircleSelector.SetColor(const AColor: TAlphaColor);

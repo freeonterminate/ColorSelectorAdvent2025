@@ -296,8 +296,6 @@ begin
   FHueCursor := THueCursor.Create(Self);
   FSVCursor := TSVCursor.Create(Self);
 
-  FSVCursor.Thickness := 1.5;
-
   FHueCursor.Parent := Self;
   FSVCursor.Parent := Self;
 end;

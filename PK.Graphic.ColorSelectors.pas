@@ -96,25 +96,23 @@ type
   // カーソル
   TSelectorCursor = class(TCircle)
   private const
-    DEFAULT_THICKNESS = 2;
+    DEFAULT_THICKNESS = 1;
   private var
     FSelector: TCustomSelector;
-  private
-    procedure SetThickness(const AValue: Single);
-    function GetThickness: Single;
   protected
+    procedure Paint; override;
     procedure MoveTo(const AX, AY: Single); virtual;
     procedure Update(const ASize: Single); virtual;
     property Selector: TCustomSelector read FSelector;
   public
     constructor Create(AOwner: TComponent); override;
-    property Thickness: Single read GetThickness write SetThickness;
   end;
 
 implementation
 
 uses
-  FMX.Effects
+  System.Math
+  , FMX.Effects
   ;
 
 { TCustomSelector }
@@ -239,20 +237,6 @@ begin
   HitTest := False;
 
   FSelector := AOwner as TCustomSelector;
-
-  Fill.Color := $00_ff_ff_ff;
-  Stroke.Color := TAlphaColors.White;
-  Stroke.Thickness := DEFAULT_THICKNESS;
-
-  var F := TGlowEffect.Create(Self);
-  F.GlowColor := TAlphaColors.Black;
-  F.Softness := 0.2;
-  F.Parent := Self;
-end;
-
-function TSelectorCursor.GetThickness: Single;
-begin
-  Result := Stroke.Thickness;
 end;
 
 procedure TSelectorCursor.MoveTo(const AX, AY: Single);
@@ -260,10 +244,19 @@ begin
   // 継承先で上書き
 end;
 
-procedure TSelectorCursor.SetThickness(const AValue: Single);
+procedure TSelectorCursor.Paint;
 begin
-  Stroke.Thickness := AValue;
-  Update(Width);
+  var R := LocalRect;
+
+  Canvas.Stroke.Color := TAlphaColors.Black;
+  Canvas.Stroke.Thickness := DEFAULT_THICKNESS;
+  Canvas.DrawEllipse(R, 1);
+
+  R.Inflate(-1, -1);
+
+  Canvas.Stroke.Color := TAlphaColors.White;
+  Canvas.Stroke.Thickness := Stroke.Thickness * 1.5;
+  Canvas.DrawEllipse(R, 1);
 end;
 
 procedure TSelectorCursor.Update(const ASize: Single);
@@ -271,7 +264,7 @@ begin
   Width := ASize;
   Height := ASize;
 
-  // Color を強制的に設定する
+  // Color を強制的に設定することで、色とカーソル位置を一致させる
   var C := FSelector.FColor;
   FSelector.FColor := C xor $ff_ff_ff_ff;
   FSelector.SetColor(C);

@@ -123,6 +123,7 @@ begin
   inherited;
 
   FBaseColor := TAlphaColors.White;
+  FColor := TAlphaColors.Black;
 
   FBase := TBitmap.Create;
   FBase.SetSize(320, 320);

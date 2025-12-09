@@ -100,7 +100,7 @@ end;
 
 procedure THSLColorSelector.QuadChangeHandler(Sender: TObject);
 begin
-  var Color := HSLtoRGB(FHue.Hue, FQuad.Sat, FQuad.Lum);
+  var Color := HSLtoRGB(FHue.Hue, FQuad.Sat, FQuad.Lum) and $00_ff_ff_ff;
   var Alpha := Trunc(FQuad.Alpha * $ff) shl 24;
 
   FColor := Alpha or Color;

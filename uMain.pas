@@ -243,7 +243,7 @@ begin
 
   FColorPanelWrapper := CreateSelector<TFMXColorPanelWrapper>(tabFMX);
 
-  RGBBarChangeHandler(FRGBBars, TAlphaColors.Black);
+  RGBBarChangeHandler(nil, TAlphaColors.Black);
 end;
 
 procedure TfrmSelector.FormDestroy(Sender: TObject);

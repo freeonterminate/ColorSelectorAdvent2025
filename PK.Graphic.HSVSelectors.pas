@@ -85,6 +85,8 @@ type
     AA_WIDTH = 1;
     // 枠線の太さ
     LINE_WIDTH = 1.0;
+    // 並列処理を使うかどうかの閾値
+    PARALLEL_THREASHOLD = 640;
   private var
     FDiameter: Integer;
     FRadius: Integer;
@@ -186,7 +188,9 @@ uses
 
 procedure THSVSelector.CalcColor;
 begin
-  FColor := HSV2RGB(FHue, FSaturation, FValue);
+  FColor :=
+    (FColor and $ff_00_00_00) or
+    (HSV2RGB(FHue, FSaturation, FValue) and $00_ff_ff_ff);
   DoChange;
 end;
 
@@ -406,6 +410,7 @@ type
 var
   TriArea: Single;
   D: Single;
+  // DrawX 内から参照される
   DH: Single;
   BorderColor: TAlphaColor;
   SY: Integer;
@@ -521,12 +526,7 @@ begin
 
   Base := AData.Data;
 
-  if
-    TOSVersion.Platform in [
-      TOSVersion.TPlatform.pfWindows,
-      TOSVersion.TPlatform.pfMacOS
-    ]
-  then
+  if Min(Width, Height) > PARALLEL_THREASHOLD then
   begin
     TParallel.For(
       SY,

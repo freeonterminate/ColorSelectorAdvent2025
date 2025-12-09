@@ -439,6 +439,7 @@ begin
   FBBar := CreateBar<TBBar>(TAlignLayout.MostBottom);
 
   FABar.Visible := False;
+  FABar.Value := $ff;
 
   SetColorWithoutEvent($ff_00_00_00);
 end;

@@ -233,7 +233,9 @@ begin
   FSelCol := EnsureRange(ACol, 0, FCols - 1);
   FSelRow := EnsureRange(ARow, 0, FRows - 1);
 
-  FColor := GetCellColor(FSelCol, FSelRow);
+  FColor :=
+    (FColor and $ff_00_00_00) or
+    (GetCellColor(FSelCol, FSelRow) and $00_ff_ff_ff);
   DoChange;
 
   SetCursorPosBySelected;

@@ -11,6 +11,7 @@
  *
  * HISTROY
  *   2025/12/08 Version 1.1.0  First Release
+ *   2025/12/09 Version 1.1.1  HSL Support / Circle Speedup
  *
  * USAGE
  *   // Create Selector

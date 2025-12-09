@@ -9,6 +9,11 @@
  *   Released under the MIT license
  *   http://opensource.org/licenses/mit-license.php
  *
+ * HISTROY
+ *   2025/12/01 Version 1.0.0  First Release
+ *   2025/12/08 Version 1.1.0  FMX ColorPanel Support
+ *   2025/12/09 Version 1.1.1  HSL Support / Circle Speedup
+ *
  * USAGE
  *   // Create Selector
  *   FSelector := TCircleSelector.Create(Self);
@@ -20,10 +25,6 @@
  *   begin
  *     Label1.TextSettings.FontColor := AColor;
  *   end;
- *
- * HISTROY
- *   2025/12/01 Version 1.0.0  First Release
- *   2025/12/08 Version 1.1.0  FMX ColorPanel Support
  *
  * Programmed by HOSOKAWA Jun (twitter: @pik)
  *)
@@ -255,7 +256,7 @@ begin
   R.Inflate(-1, -1);
 
   Canvas.Stroke.Color := TAlphaColors.White;
-  Canvas.Stroke.Thickness := Stroke.Thickness * 1.5;
+  Canvas.Stroke.Thickness := DEFAULT_THICKNESS * 1.5;
   Canvas.DrawEllipse(R, 1);
 end;
 

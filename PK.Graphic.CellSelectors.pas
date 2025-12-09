@@ -9,6 +9,11 @@
  *   Released under the MIT license
  *   http://opensource.org/licenses/mit-license.php
  *
+ * HISTROY
+ *   2025/12/01 Version 1.0.0  First Release
+ *   2025/12/08 Version 1.1.0  FMX ColorPanel Support
+ *   2025/12/09 Version 1.1.1  HSL Support / Circle Speedup
+ *
  * USAGE
  *   // Create Selector
  *   FSelector := T16CellSelector.Create(Self);
@@ -20,10 +25,6 @@
  *   begin
  *     Label1.TextSettings.FontColor := AColor;
  *   end;
- *
- * HISTROY
- *   2025/12/01 Version 1.0.0  First Release
- *   2025/12/08 Version 1.1.0  FMX ColorPanel Support
  *
  * Programmed by HOSOKAWA Jun (twitter: @pik)
  *)

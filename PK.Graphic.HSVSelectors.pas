@@ -12,6 +12,7 @@
  * HISTROY
  *   2025/12/01 Version 1.0.0  First Release
  *   2025/12/08 Version 1.1.0  FMX ColorPanel Support
+ *   2025/12/09 Version 1.1.1  HSL Support / Circle Speedup
  *
  * USAGE
  *   // Create Selector
@@ -137,8 +138,7 @@ type
 
   TRectSelector = class(THSVSelector)
   private const
-    CURSOR_RATIO = 0.07;
-    CURSOR_MINIMUM_SIZE = 8;
+    CURSOR_SIZE = 14;
   private var
     FCursor: TRectCursor;
   protected
@@ -178,6 +178,7 @@ implementation
 
 uses
   System.Math
+  , System.Threading
   , PK.Graphic.ColorConverter
   ;
 
@@ -398,34 +399,103 @@ end;
 procedure TCircleSelector.DrawTriangle(
   const ACanvas: TCanvas;
   const AData: TBitmapData);
-
-  // カラーブレンド用
-  function BlendColor(
-    const AC1, AC2: TAlphaColor;
-    const AT: Single): TAlphaColor;
-  var
-    R1: TAlphaColorRec absolute AC1;
-    R2: TAlphaColorRec absolute AC2;
-    Res: TAlphaColorRec absolute Result;
-  begin
-    if AT <= 0 then
-      Exit(AC1);
-
-    if AT >= 1 then
-      Exit(AC2);
-
-    var InvT := 1 - AT;
-
-    Res.R := Round(R1.R * InvT + R2.R * AT);
-    Res.G := Round(R1.G * InvT + R2.G * AT);
-    Res.B := Round(R1.B * InvT + R2.B * AT);
-    Res.A := 255; // 基本的に不透明同士のブレンドを想定
-  end;
-
+type
+  TAlphaColorArray = packed array [0.. 0] of TAlphaColor;
+  PAlphaColorArray = ^TAlphaColorArray;
+  TDrawX = reference to procedure (const AY: Integer);
+var
+  TriArea: Single;
+  D: Single;
+  DH: Single;
+  BorderColor: TAlphaColor;
+  SY: Integer;
+  EY: Integer;
+  SX: Integer;
+  EX: Integer;
+  Base: PByte;
 begin
-  // 1. 重心座標(W)をピクセル距離に変換するための係数を計算する
-  // 三角形の面積 (符号なし)
-  var TriArea := 0.5 * Abs(
+  const DrawX: TDrawX =
+    procedure (const AY: Integer)
+    var
+      // ループ内で使う変数
+      W0, W1, W2: Single;
+      MinDist: Single;
+      V, S: Single;
+      BorderRatio: Single;
+      Alpha: Single;
+      FinalColor: TAlphaColor;
+
+      // カラーブレンド用
+      function BlendColor(
+        const AC1, AC2: TAlphaColor;
+        const AT: Single): TAlphaColor; inline;
+      var
+        R1: TAlphaColorRec absolute AC1;
+        R2: TAlphaColorRec absolute AC2;
+        Res: TAlphaColorRec absolute Result;
+      begin
+        if AT <= 0 then
+          Exit(AC1);
+
+        if AT >= 1 then
+          Exit(AC2);
+
+        var InvT := 1 - AT;
+
+        Res.R := Round(R1.R * InvT + R2.R * AT);
+        Res.G := Round(R1.G * InvT + R2.G * AT);
+        Res.B := Round(R1.B * InvT + R2.B * AT);
+        Res.A := 255;
+      end;
+
+    begin
+      var Line := PAlphaColorArray(Base + AY * AData.Pitch);
+
+      for var X := SX to EX do
+      begin
+        if not CalcBarycentric(X, AY, W0, W1, W2) then
+          Continue;
+
+        // ピクセル単位でのエッジからの距離を計算
+        MinDist := MinValue([W0 * DH, W1 * DH, W2 * DH]);
+
+        // エッジから AA_WIDTH 分だけ外側(-AA_WIDTH)までを描画対象とする
+        if MinDist > -AA_WIDTH then
+        begin
+          // 中身の色（HSV）を決定
+          V := EnsureRange(W0 + W1, 0, 1);
+          S := 0.0;
+          if V > 0 then
+            S := EnsureRange(W0 / V, 0, 1);
+
+          FinalColor := $ff_00_00_00 or HSV2RGB(FHue, S, V);
+
+          // 枠線と中身の合成
+          if MinDist < LINE_WIDTH then
+          begin
+            // 枠線領域
+            BorderRatio := EnsureRange((LINE_WIDTH - MinDist) * 2, 0, 1);
+            FinalColor := BlendColor(FinalColor, BorderColor, BorderRatio);
+          end;
+
+          // 最外周のアンチエイリアス (背景との合成用アルファ値決定)
+          if MinDist < 0.5 then
+          begin
+            // MinDist が -0.5 ～ 0.5 の範囲を 0.0 ～ 1.0 にマップ
+            Alpha := EnsureRange(MinDist + 0.5, 0, 1);
+            FinalColor := BlendColor(BaseColor, FinalColor, Alpha);
+          end;
+
+          // ピクセル描画
+          {$R-}
+          Line[X] := FinalColor;
+          {$R+}
+        end;
+      end;
+    end;
+
+  // 重心座標(W)をピクセル距離に変換するための係数を計算する
+  TriArea := 0.5 * Abs(
     FTriP0.X * (FTriP1.Y - FTriP2.Y) +
     FTriP1.X * (FTriP2.Y - FTriP0.Y) +
     FTriP2.X * (FTriP0.Y - FTriP1.Y)
@@ -437,85 +507,41 @@ begin
 
   // 各頂点に対応する辺（対辺）からの高さ H = 2 * Area / 底辺長
   // これにより、距離(px) = W * H となる
-  var D := Sqrt(Sqr(FTriP1.X - FTriP2.X) + Sqr(FTriP1.Y - FTriP2.Y));
-  var DH := (2 * TriArea) / Max(1.0, D);
+  D := Sqrt(Sqr(FTriP1.X - FTriP2.X) + Sqr(FTriP1.Y - FTriP2.Y));
+  DH := (2 * TriArea) / Max(1.0, D);
 
   // 枠線の色
-  var BorderColor := BaseColor xor $00_ff_ff_ff;
+  BorderColor := BaseColor xor $00_ff_ff_ff;
 
-  for var Y := FTriRect.Top to FTriRect.Bottom do
+  SY := Max(FTriRect.Top, 0);
+  EY := Min(FTriRect.Bottom, AData.Height - 1);
+
+  SX := Max(FTriRect.Left, 0);
+  EX := Min(FTriRect.Right, AData.Width - 1);
+
+  Base := AData.Data;
+
+  if
+    TOSVersion.Platform in [
+      TOSVersion.TPlatform.pfWindows,
+      TOSVersion.TPlatform.pfMacOS
+    ]
+  then
   begin
-    for var X := FTriRect.Left to FTriRect.Right do
-    begin
-      var W0, W1, W2: Single;
-      CalcBarycentric(X, Y, W0, W1, W2);
-
-      // ピクセル単位でのエッジからの距離を計算
-      // 最も近いエッジまでの距離 (これが負なら三角形の外、正なら中)
-      var MinDist := MinValue([W0 * DH, W1 * DH, W2 * DH]);
-
-      // エッジから AA_WIDTH 分だけ外側(-AA_WIDTH)までを描画対象とする
-      if MinDist > -AA_WIDTH then
+    TParallel.For(
+      SY,
+      EY,
+      procedure(AY: Integer)
       begin
-        // 1. まず中身の色（HSV）を決定
-        var FillC: TAlphaColor;
-        // 色計算のために正規化（負の値は0として扱う）
-        var SafeW0 := Max(0, W0);
-        var SafeW1 := Max(0, W1);
-        var SafeV_Sum := SafeW0 + SafeW1; // W0+W1
-        var V := EnsureRange(SafeV_Sum, 0, 1);
-        var S := 0.0;
-        if V > 0 then
-          S := EnsureRange(SafeW0 / V, 0, 1);
-
-        FillC := HSV2RGB(FHue, S, V);
-        TAlphaColorRec(FillC).A := 255;
-
-        var FinalColor: TAlphaColor;
-        var Alpha: Single := 1.0;
-
-        // 2. 枠線と中身の合成
-        if MinDist < LINE_WIDTH then
-        begin
-          // 枠線領域
-          // さらに枠線の内側エッジ(LINE_WIDTH付近)のアンチエイリアス
-          // MinDistが小さいほど枠線色が強い。
-          // ここでは簡易的に、LINE_WIDTH境界でFillCとBorderCを混ぜる
-          var BorderRatio := EnsureRange((LINE_WIDTH - MinDist) * 2, 0, 1);
-          FinalColor := BlendColor(FillC, BorderColor, BorderRatio);
-        end
-        else
-        begin
-          // 完全に中身
-          FinalColor := FillC;
-        end;
-
-        // 3. 最外周のアンチエイリアス (背景との合成用アルファ値決定)
-        // MinDist が 0 付近（または負の少し外側）のとき、Alphaを下げる
-        if MinDist < 0.5 then
-        begin
-           // MinDist が -0.5 ～ 0.5 の範囲を 0.0 ～ 1.0 にマップ
-           Alpha := EnsureRange(MinDist + 0.5, 0, 1);
-        end;
-
-        // 4. ピクセル描画
-        if
-          (X >= 0) and
-          (X < AData.Width) and
-          (Y >= 0) and
-          (Y < AData.Height)
-        then
-        begin
-          if Alpha < 1.0 then
-            FinalColor := BlendColor(BaseColor, FinalColor, Alpha);
-
-          AData.SetPixel(X, Y, FinalColor);
-        end;
-      end;
-    end;
+        DrawX(AY);
+      end
+    );
+  end
+  else
+  begin
+    for var Y := SY to EY do
+      DrawX(Y);
   end;
-
-  Invalidate;
 end;
 
 function TCircleSelector.GetColorByPos(const AX, AY: Integer): TAlphaColor;
@@ -587,6 +613,8 @@ begin
   finally
     Base.Unmap(Data);
   end;
+
+  Invalidate;
 end;
 
 procedure TCircleSelector.ResizeImpl;
@@ -748,8 +776,7 @@ end;
 
 procedure TRectSelector.ResizeImpl;
 begin
-  var Size := Max(Min(Width, Height) * CURSOR_RATIO, CURSOR_MINIMUM_SIZE);
-  FCursor.Update(Size);
+  FCursor.Update(CURSOR_SIZE);
 end;
 
 procedure TRectSelector.SetColor(const AColor: TAlphaColor);
@@ -801,7 +828,7 @@ begin
     X := FCX + FHueRadius * C;
     Y := FCY + FHueRadius * S;
 
-    FHue := FMod(RadToDeg(Theta), 360);
+    FHue := RadToDeg(Theta);
     if (FHue < 0) then
       FHue := FHue + 360;
 

@@ -30,6 +30,7 @@ uses
   , PK.Graphic.ColorSelectors
   , PK.Graphic.ColorBar
   , PK.Graphic.FMXColorPanelWrapper
+  , PK.Graphic.HSLColorSelector
   ;
 
 type
@@ -58,6 +59,7 @@ type
     layAIMemoScroller: TLayout;
     colorBox: TColorBox;
     tabFMX: TTabItem;
+    tabHSL: TTabItem;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure layColorClick(Sender: TObject);
@@ -82,6 +84,7 @@ type
     F16Selector: T16CellSelector;
     F128Selector: T128CellSelector;
     FColorPanelWrapper: TFMXColorPanelWrapper;
+    FHSLColorSelector: THSLColorSelector;
     FRGBBars: TRGBBars;
     FColor: TAlphaColor;
     FPrevColor: TAlphaColor;
@@ -132,6 +135,8 @@ begin
   Result.OnChange := SelectorChangeHandler;
   Result.OnMouseUp := SelectorMouseUpHandler;
   Result.Parent := AParent;
+
+  AParent.TagObject := Result;
 end;
 
 procedure TfrmSelector.AIChatReqErrorHandler(
@@ -233,6 +238,8 @@ begin
   F128Selector := CreateSelector<T128CellSelector>(tab128);
   F16Selector.BaseColor := $00_ff_ff_ff;
   F128Selector.BaseColor := $00_ff_ff_ff;
+
+  FHSLColorSelector := CreateSelector<THSLColorSelector>(tabHSL);
 
   FColorPanelWrapper := CreateSelector<TFMXColorPanelWrapper>(tabFMX);
 
@@ -368,23 +375,7 @@ end;
 
 procedure TfrmSelector.tabSelectorsChange(Sender: TObject);
 begin
-  var S: TCustomSelector := nil;
-
-  if tabSelectors.ActiveTab = tabCircle then
-    S := FCircleSelector;
-
-  if tabSelectors.ActiveTab = tabRect then
-    S := FRectSelector;
-
-  if tabSelectors.ActiveTab = tab16 then
-    S := F16Selector;
-
-  if tabSelectors.ActiveTab = tab128 then
-    S := F128Selector;
-
-  if tabSelectors.ActiveTab = tabFMX then
-    S := FColorPanelWrapper;
-
+  var S := TCustomSelector(tabSelectors.ActiveTab.TagObject);
   if S <> nil then
     S.SetColorWithoutEvent(FColor);
 end;
